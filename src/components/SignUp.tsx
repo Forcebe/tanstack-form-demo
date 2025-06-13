@@ -11,9 +11,16 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { useForm } from "@tanstack/react-form";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { AlertCircle, LoaderCircle } from "lucide-react";
+import { AlertCircle, LoaderCircle, X } from "lucide-react";
 import { validateUsername } from "@/api/user";
 import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 // zod schema can be used as a validator
 const usernameSchema = z
@@ -27,6 +34,10 @@ export const SignUp = () => {
       username: "",
       password: "",
       confirmPassword: "",
+      // default elements in the array add a subfield
+      interests: [] as string[],
+      // complex array of objects
+      skills: [] as { language: string; rating: number }[],
     },
     validators: {
       // validators can be set at the form level as well as the field level
@@ -166,6 +177,127 @@ export const SignUp = () => {
               </div>
             )}
           />
+          <div>
+            {/* array field is used to handle arrays of values */}
+            <form.Field
+              name="interests"
+              mode="array"
+              children={(field) => (
+                <>
+                  <Label className="mr-2">Interests</Label>
+                  {/* map over the array of values */}
+                  {field.state.value.map((_, index) => (
+                    <div key={index} className="flex gap-2 my-2">
+                      {/* we can nest fields inside fields */}
+                      <Select
+                        value={`${index}`}
+                        onValueChange={(newIndex) =>
+                          field.moveValue(index, +newIndex)
+                        }
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.state.value.map((_, index) => (
+                            <SelectItem key={index} value={`${index}`}>
+                              # {index + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <form.Field
+                        name={`interests[${index}]`}
+                        children={(subField) => (
+                          <Input
+                            type="text"
+                            value={subField.state.value}
+                            autoFocus // focus the input when the field is rendered
+                            onChange={(e) =>
+                              subField.handleChange(e.target.value)
+                            }
+                          />
+                        )}
+                      />
+                      <Button
+                        variant={"destructive"}
+                        onClick={() => field.removeValue(index)}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant={"outline"}
+                    // method on field to push a value to the array
+                    onClick={() => field.pushValue("")}
+                  >
+                    Add
+                  </Button>
+                </>
+              )}
+            />
+          </div>
+
+          <div>
+            {/* array field is used to handle arrays of values */}
+            <form.Field
+              name="skills"
+              mode="array"
+              children={(field) => (
+                <>
+                  <Label className="mr-2">Skills</Label>
+                  {/* map over the array of values */}
+                  {field.state.value.map((_, index) => (
+                    <div key={index} className="flex gap-2 my-2">
+                      {/* we can nest fields inside fields */}
+                      <form.Field
+                        name={`skills[${index}].language`}
+                        children={(subField) => (
+                          <Input
+                            type="text"
+                            value={subField.state.value}
+                            autoFocus // focus the input when the field is rendered
+                            onChange={(e) =>
+                              subField.handleChange(e.target.value)
+                            }
+                          />
+                        )}
+                      />
+                      <form.Field
+                        name={`skills[${index}].rating`}
+                        children={(subField) => (
+                          <Input
+                            type="number"
+                            value={subField.state.value}
+                            onChange={(e) =>
+                              subField.handleChange(e.target.valueAsNumber)
+                            }
+                          />
+                        )}
+                      />
+                      <Button
+                        variant={"destructive"}
+                        onClick={() => field.removeValue(index)}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant={"outline"}
+                    // method on field to push a value to the array
+                    onClick={() => field.pushValue({ language: "", rating: 0 })}
+                  >
+                    Add
+                  </Button>
+                </>
+              )}
+            />
+          </div>
+
           {/* form.Subscribe is used to subscribe to the form state. 
           This means that when the form state changes, the component will re-render. */}
           <form.Subscribe
@@ -183,8 +315,19 @@ export const SignUp = () => {
         </form>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => form.reset()}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            form.reset();
+          }}
+        >
           Reset
+        </Button>
+        <Button
+          variant={"ghost"}
+          onClick={() => console.log(form.state.values)}
+        >
+          Debug
         </Button>
         {/* form methods can be used outside the form component. */}
         <Button onClick={form.handleSubmit}>Sign Up</Button>
